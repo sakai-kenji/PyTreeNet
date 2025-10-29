@@ -48,7 +48,7 @@ def add_ttns_svd_controlled_params(ttn1: TreeTensorNetwork,ttn2: TreeTensorNetwo
         rel_tol (float, optional): Relative tolerance for singular values. Defaults to 1e-12.
         total_tol (float, optional): Absolute tolerance for singular values. Defaults to 1e-12.
         renorm (bool, optional): Renormalize after truncation. Defaults to False.
-        sum_trunc (bool, optional):Use sum-based truncation. Defaults to False.
+        sum_trunc (bool, optional): Use sum-based truncation. Defaults to False.
     
     Returns:
         TreeTensorNetwork: Sum with controlled bond dimensions

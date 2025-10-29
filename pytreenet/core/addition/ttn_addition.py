@@ -4,10 +4,75 @@ from pytreenet.core.ttn import TreeTensorNetwork
 from pytreenet.core.node import Node
 from pytreenet.util.ttn_exceptions import NotCompatibleException
 
+def add_ttns_direct_form(ttn1: TreeTensorNetwork, ttn2: TreeTensorNetwork) -> TreeTensorNetwork:
+    """
+    Adds two Tree Tensor Networks using direct form addition.
+    
+    Args:
+        ttn1 (TreeTensorNetwork): First TTN
+        ttn2 (TreeTensorNetwork): Second TTN
+        
+    Returns:
+        TreeTensorNetwork: Sum of the TTNs
+        
+    Raises:
+        NotCompatibleException: TTNs have incompatible structures
+        ValueError: TTNs are empty or have mismatched roots
+    """
+
+    _validate_structure(ttn1, ttn2)
+    
+    result_ttn = TreeTensorNetwork()
+    
+    direct_tensors = {}
+    for node_id in ttn1.nodes:
+        tensor1 = ttn1.tensors[node_id]
+        tensor2 = ttn2.tensors[node_id]
+        node1 = ttn1.nodes[node_id]
+        node2 = ttn2.nodes[node_id]
+        direct_tensors[node_id] = _direct_tensor_addition(tensor1, tensor2, node1, node2)
+    
+    root_id = ttn1.root_id
+    root_tensor = direct_tensors[root_id]
+    root_node = Node(tensor=root_tensor, identifier=root_id)
+    result_ttn.add_root(root_node, root_tensor)
+    
+    nodes_to_process = [root_id]
+    reconstructed_nodes = {root_id}
+    
+    while nodes_to_process:
+        current_node_id = nodes_to_process.pop(0)
+        current_node = ttn1.nodes[current_node_id]
+        
+        for child_id in current_node.children:
+            if child_id not in reconstructed_nodes:
+                child_tensor = direct_tensors[child_id]
+                child_node = Node(tensor=child_tensor, identifier=child_id)
+                
+                child_node_orig = ttn1.nodes[child_id]
+                parent_leg_in_child = child_node_orig.neighbour_index(current_node_id)
+                child_leg_in_parent = current_node.neighbour_index(child_id)
+                
+                result_ttn.add_child_to_parent(
+                    child_node,
+                    child_tensor,
+                    parent_leg_in_child,
+                    current_node_id,
+                    child_leg_in_parent
+                )
+                
+                nodes_to_process.append(child_id)
+                reconstructed_nodes.add(child_id)
+
+    
+    return result_ttn
+
+
 def _direct_tensor_addition(tensor1: np.ndarray, tensor2: np.ndarray, node1, node2) -> np.ndarray:
     """
     Individual tensor addition.
     """
+
     shape1 = tensor1.shape
     shape2 = tensor2.shape
     
@@ -64,73 +129,11 @@ def _direct_tensor_addition(tensor1: np.ndarray, tensor2: np.ndarray, node1, nod
         
         return new_tensor
 
-def add_ttns_direct_form(ttn1: TreeTensorNetwork, ttn2: TreeTensorNetwork) -> TreeTensorNetwork:
-    """
-    Adds two Tree Tensor Networks using direct form addition.
-    
-    Args:
-        ttn1 (TreeTensorNetwork): First TTN to add
-        ttn2 (TreeTensorNetwork): Second TTN to add
-        
-    Returns:
-        TreeTensorNetwork: The sum of the two TTNs
-        
-    Raises:
-        NotCompatibleException: If TTNs have incompatible structures
-        ValueError: If TTNs are empty or have mismatched roots
-    """
-
-    _validate_structure(ttn1, ttn2)
-    
-    result_ttn = TreeTensorNetwork()
-    
-    direct_tensors = {}
-    for node_id in ttn1.nodes:
-        tensor1 = ttn1.tensors[node_id]
-        tensor2 = ttn2.tensors[node_id]
-        node1 = ttn1.nodes[node_id]
-        node2 = ttn2.nodes[node_id]
-        direct_tensors[node_id] = _direct_tensor_addition(tensor1, tensor2, node1, node2)
-    
-    root_id = ttn1.root_id
-    root_tensor = direct_tensors[root_id]
-    root_node = Node(tensor=root_tensor, identifier=root_id)
-    result_ttn.add_root(root_node, root_tensor)
-    
-    nodes_to_process = [root_id]
-    reconstructed_nodes = {root_id}
-    
-    while nodes_to_process:
-        current_node_id = nodes_to_process.pop(0)
-        current_node = ttn1.nodes[current_node_id]
-        
-        for child_id in current_node.children:
-            if child_id not in reconstructed_nodes:
-                child_tensor = direct_tensors[child_id]
-                child_node = Node(tensor=child_tensor, identifier=child_id)
-                
-                child_node_orig = ttn1.nodes[child_id]
-                parent_leg_in_child = child_node_orig.neighbour_index(current_node_id)
-                child_leg_in_parent = current_node.neighbour_index(child_id)
-                
-                result_ttn.add_child_to_parent(
-                    child_node,
-                    child_tensor,
-                    parent_leg_in_child,
-                    current_node_id,
-                    child_leg_in_parent
-                )
-                
-                nodes_to_process.append(child_id)
-                reconstructed_nodes.add(child_id)
-
-    
-    return result_ttn
-
 def _validate_structure(ttn1: TreeTensorNetwork, ttn2: TreeTensorNetwork):
     """
-    Validates that two TTNs have compatible structures for direct addition (i.e. the same 'shape').
+    Validates that TTNs have compatible structures for direct addition (i.e. the same 'shape').
     """
+
     if len(ttn1.nodes) != len(ttn2.nodes):
         raise NotCompatibleException(f"TTNs have different numbers of nodes: {len(ttn1.nodes)} vs {len(ttn2.nodes)}")
     

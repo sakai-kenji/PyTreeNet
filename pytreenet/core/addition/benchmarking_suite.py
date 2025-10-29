@@ -30,7 +30,7 @@ except ImportError:
 from ttn_addition import add_ttns_direct_form
 from ttn_basis_extension_addition import ttn_basis_extension_addition
 from ttn_addition_svd import add_ttns_svd_controlled
-from ttn_addition_benchmark import generate_tree_pair, generate_tree_pair_by_node_count, tree_statistics
+from addition_util import generate_tree_pair, generate_tree_pair_by_node_count, tree_statistics
 from pytreenet.util.tensor_splitting import SVDParameters
 from pytreenet.ttns.ttns import TreeTensorNetworkState
 from pytreenet.contractions.tree_contraction import completely_contract_tree
@@ -267,19 +267,19 @@ def benchmark_method(tree1, tree2, method_func, method_name: str, num_runs: int 
 
         if PYINSTRUMENT_AVAILABLE:
             # Generate flame graph HTML
-            html_file = f"Andres/profile_{safe_name}.html"
+            html_file = f"profile_{safe_name}.html"
             with open(html_file, 'w') as f:
                 f.write(profiler_obj.output_html())
             print(f"  Flame graph saved to {html_file}")
 
             # Also save text output
-            txt_file = f"Andres/profile_{safe_name}.txt"
+            txt_file = f"profile_{safe_name}.txt"
             with open(txt_file, 'w') as f:
                 f.write(profiler_obj.output_text(unicode=True, color=False, show_all=False))
             print(f"  Text profiling saved to {txt_file}")
         else:
             # Save cProfile stats
-            txt_file = f"Andres/profile_{safe_name}.txt"
+            txt_file = f"profile_{safe_name}.txt"
             with open(txt_file, 'w') as f:
                 ps = pstats.Stats(profiler_obj, stream=f)
                 ps.sort_stats('cumulative')
@@ -452,6 +452,7 @@ def run_svd_method_comparison(depths: List[int],
                                physical_dim: int = 2,
                                bond_dim: int = 2,
                                svd_params_template: Dict = None,
+                               enable_profiling = False,
                                error_method: str = 'contraction') -> Dict:
     """Compare Direct+SVD vs Basis Extension+SVD against untruncated reference.
 
@@ -706,8 +707,8 @@ def plot_results(results: Dict, save_prefix: str = "ttn_comparison"):
     ax1.legend(fontsize=12, loc='upper left', bbox_to_anchor=(1.02, 1))
     ax1.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig(f'Andres/{save_prefix}_max_bond.png', dpi=300, bbox_inches='tight')
-    print(f"Plot saved as Andres/{save_prefix}_max_bond.png")
+    plt.savefig(f'pytreenet/core/addition/{save_prefix}_max_bond.png', dpi=300, bbox_inches='tight')
+    print(f"Plot saved as pytreenet/core/addition/{save_prefix}_max_bond.png")
     plt.close()
 
     # Plot 2: Number of nodes vs Running time
@@ -723,8 +724,8 @@ def plot_results(results: Dict, save_prefix: str = "ttn_comparison"):
     ax2.legend(fontsize=12, loc='upper left', bbox_to_anchor=(1.02, 1))
     ax2.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig(f'Andres/{save_prefix}_time.png', dpi=300, bbox_inches='tight')
-    print(f"Plot saved as Andres/{save_prefix}_time.png")
+    plt.savefig(f'pytreenet/core/addition/{save_prefix}_time.png', dpi=300, bbox_inches='tight')
+    print(f"Plot saved as pytreenet/core/addition/{save_prefix}_time.png")
     plt.close()
 
     # Print summary table
@@ -789,8 +790,8 @@ def plot_svd_truncation_results(results: Dict, save_prefix: str = "ttn_svd_trunc
     ax1.legend(fontsize=11, loc='upper left', bbox_to_anchor=(1.02, 1))
     ax1.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig(f'Andres/{save_prefix}_error.png', dpi=300, bbox_inches='tight')
-    print(f"Plot saved as Andres/{save_prefix}_error.png")
+    plt.savefig(f'pytreenet/core/addition/{save_prefix}_error.png', dpi=300, bbox_inches='tight')
+    print(f"Plot saved as pytreenet/core/addition/{save_prefix}_error.png")
     plt.close()
 
     # Plot 2: Running time vs number of nodes
@@ -810,8 +811,8 @@ def plot_svd_truncation_results(results: Dict, save_prefix: str = "ttn_svd_trunc
     ax2.legend(fontsize=11, loc='upper left', bbox_to_anchor=(1.02, 1))
     ax2.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig(f'Andres/{save_prefix}_time.png', dpi=300, bbox_inches='tight')
-    print(f"Plot saved as Andres/{save_prefix}_time.png")
+    plt.savefig(f'pytreenet/core/addition/{save_prefix}_time.png', dpi=300, bbox_inches='tight')
+    print(f"Plot saved as pytreenet/core/addition/{save_prefix}_time.png")
     plt.close()
 
     # Plot 3: Actual max bond vs number of nodes
@@ -831,8 +832,8 @@ def plot_svd_truncation_results(results: Dict, save_prefix: str = "ttn_svd_trunc
     ax3.legend(fontsize=11, loc='upper left', bbox_to_anchor=(1.02, 1))
     ax3.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig(f'Andres/{save_prefix}_bond.png', dpi=300, bbox_inches='tight')
-    print(f"Plot saved as Andres/{save_prefix}_bond.png")
+    plt.savefig(f'pytreenet/core/addition/{save_prefix}_bond.png', dpi=300, bbox_inches='tight')
+    print(f"Plot saved as pytreenet/core/addition/{save_prefix}_bond.png")
     plt.close()
 
     # Print summary table
@@ -924,8 +925,8 @@ def plot_svd_method_comparison_results(results: Dict, save_prefix: str = "ttn_sv
     ax1.legend(fontsize=9, loc='upper left', bbox_to_anchor=(1.02, 1))
     ax1.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig(f'Andres/{save_prefix}_error.png', dpi=300, bbox_inches='tight')
-    print(f"Plot saved as Andres/{save_prefix}_error.png")
+    plt.savefig(f'pytreenet/core/addition/{save_prefix}_error.png', dpi=300, bbox_inches='tight')
+    print(f"Plot saved as pytreenet/core/addition/{save_prefix}_error.png")
     plt.close()
 
     # Plot 2: Time comparison
@@ -955,8 +956,8 @@ def plot_svd_method_comparison_results(results: Dict, save_prefix: str = "ttn_sv
     ax2.grid(True, alpha=0.3)
     ax2.set_yscale('log')
     plt.tight_layout()
-    plt.savefig(f'Andres/{save_prefix}_time.png', dpi=300, bbox_inches='tight')
-    print(f"Plot saved as Andres/{save_prefix}_time.png")
+    plt.savefig(f'pytreenet/core/addition/{save_prefix}_time.png', dpi=300, bbox_inches='tight')
+    print(f"Plot saved as pytreenet/core/addition/{save_prefix}_time.png")
     plt.close()
 
 
@@ -968,13 +969,13 @@ if __name__ == "__main__":
     import sys
     mode = sys.argv[1] if len(sys.argv) > 1 else "basic"
 
-    mode = "svd"
+    mode = "svd_nodes"
 
     if mode == "basic":
         # Basic comparison: Direct vs Basis Extension (no truncation)
         print("\n=== BASIC COMPARISON MODE ===\n")
 
-        depths_to_test = list(range(1, 16))
+        depths_to_test = list(range(1, 10))
         branching_factor = 1
         leaf_probability = 0
         physical_dim = 2
@@ -1005,7 +1006,7 @@ if __name__ == "__main__":
         print("\n=== SVD TRUNCATION COMPARISON MODE ===\n")
 
         # Tree generation parameters
-        depths_to_test =  list(range(2, 9))#[1, 2, 3] #, 4]#, 5, 6]#, 7] #list(range(1, 10)) 
+        depths_to_test =  list(range(2, 8))#[1, 2, 3] #, 4]#, 5, 6]#, 7] #list(range(1, 10)) 
         branching_factor = 1
         leaf_probability = 0
         physical_dim = 8
@@ -1072,6 +1073,7 @@ if __name__ == "__main__":
             'total_tol': 1e-15 # float("-inf") #  #
         }
 
+        enable_profiling = False
         # Error calculation method: 'contraction' or 'scalar_product'
         error_method = 'contraction'
 
@@ -1099,7 +1101,8 @@ if __name__ == "__main__":
             physical_dim=physical_dim,
             bond_dim=bond_dim,
             svd_params_template=svd_params,
-            error_method=error_method
+            error_method=error_method,
+            enable_profiling=enable_profiling
         )
 
         plot_svd_method_comparison_results(results)
@@ -1109,7 +1112,7 @@ if __name__ == "__main__":
         print("\n=== SVD METHODS COMPARISON BY NODE COUNT ===\n")
 
         # Tree generation parameters
-        node_counts_to_test = list(range(2, 25)) # [20] #
+        node_counts_to_test = list(range(2, 20)) # [20] #
         num_runs = 3
         physical_dim = 2
         bond_dim = 2
